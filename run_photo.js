@@ -96,7 +96,9 @@ async function runPhotoGenerator() {
 Author context: Ardyanto (Antok), Full-stack Programmer & Sistem Analis bidang IT Rumah Sakit. Eksplorasi praktis AI, automasi, arsitektur data. Gaya tulisan santai, edukatif, padat wawasan. PENTING: DILARANG menyebut nama RSK Ngesti Waluyo (gunakan 'rumah sakit tempat saya bekerja' atau 'faskes'). Dilarang menyertakan link repo GitHub.
 ${blacklistText}
 Target length: 900-1400 characters in Bahasa Indonesia.
-WAJIB CALL TO ACTION (CTA) sebelum hashtag: ajak pembaca untuk Like, Komen pengalaman jika pernah mengalami hal serupa, dan Share ke rekan-rekan IT lainnya.
+WAJIB DI BAGIAN AKHIR SEBELUM HASHTAG:
+1. Ajukan 1 PERTANYAAN pancingan diskusi yang tajam, relevan, dan memancing rasa ingin tahu agar pembaca tergerak untuk ikut berkomentar dan berbagi perspektif/pengalaman mereka di kolom komentar.
+2. Sertakan ajakan interaksi (CTA): ajak pembaca untuk Like, Komen pandangan atau pengalamannya di bawah, dan Share postingan ini ke rekan-rekan IT lainnya.
 End with 5-7 relevant tech hashtags.
 
 SKILL FOTOGRAFI & PROMPT THUMBNAIL FOTO (image_prompt):
