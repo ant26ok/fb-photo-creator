@@ -29,14 +29,14 @@ if (!CONFIG.ROUTER_API_KEY || !CONFIG.TELEGRAM_BOT_TOKEN) {
 }
 
 const AI_TOPIC_ANGLES = [
-  'Pemanfaatan AI Vision & Multimodal dalam Otomasi Dokumen & Citra Medis',
-  'Autonomous AI Agents: Membangun Workflow Mandiri Tanpa Intervensi Manual',
-  'Large Language Models (LLM) On-Premise vs Cloud untuk Keamanan Data Sensitif di Rumah Sakit',
-  'AI Copilot & Coding Assistant: Lonjakan Produktivitas Programmer & Analis Sistem',
-  'Sistem Rekomendasi & Predictive Machine Learning dalam Operasional Antrean & Logistik Farmasi',
-  'Fine-Tuning vs RAG (Retrieval-Augmented Generation): Solusi Basis Pengetahuan AI di Faskes',
-  'AI Governance & Data Privacy: Melindungi Privasi Rekam Medis Elektronik dari Kebocoran',
-  'Automasi Validasi Klaim & Deteksi Anomali Koding Diagnosa dengan Machine Learning'
+  'Leveraging Multimodal AI Vision in Automating Clinical Records & Medical Imaging Workflows',
+  'Autonomous AI Agents: Designing Resilient Multi-Agent Workflows Without Human Hallucination Loops',
+  'On-Premise LLM vs Cloud Inference: Navigating Sensitive Patient Health Information (PHI) Security',
+  'AI Copilots & Autonomous Coding Agents: Doubling Engineering Throughput in Critical Systems',
+  'Predictive Machine Learning & Anomaly Detection in Hospital Queue Optimization & Drug Logistics',
+  'Fine-Tuning vs Retrieval-Augmented Generation (RAG): Building Production-Grade Healthcare Knowledge Bases',
+  'AI Governance & Zero-Retention Security: Safeguarding Electronic Medical Records from Prompt Leakage',
+  'Automated Insurance Claims Validation & Diagnostic Code Anomaly Detection Using Machine Learning'
 ];
 
 function loadState() {
@@ -93,12 +93,15 @@ async function runPhotoGenerator() {
 
   const userPrompt = `Create one insightful, highly shareable Facebook post about: ${selectedAngle}.
 
-Author context: Ardyanto (Antok), Full-stack Programmer & Sistem Analis bidang IT Rumah Sakit. Eksplorasi praktis AI, automasi, arsitektur data. Gaya tulisan santai, edukatif, padat wawasan. PENTING: DILARANG menyebut nama RSK Ngesti Waluyo (gunakan 'rumah sakit tempat saya bekerja' atau 'faskes'). Dilarang menyertakan link repo GitHub.
+Author context: Ardyanto (Antok), Full-stack Programmer & System Analyst in hospital and healthcare IT. Real-world engineering exploration of AI systems, workflow automation, and data architectures. Casual, educational, high-signal, and deeply technical yet accessible tone.
+CRITICAL ANONYMITY RULE: DO NOT mention specific institution names (e.g. RSK Ngesti Waluyo). ALWAYS use generic terms like 'the hospital where I work', 'healthcare facilities', or 'faskes'.
+CRITICAL REPO RULE: DO NOT include GitHub repository links.
 ${blacklistText}
-Target length: 900-1400 characters in Bahasa Indonesia.
-WAJIB DI BAGIAN AKHIR SEBELUM HASHTAG:
-1. Ajukan 1 PERTANYAAN pancingan diskusi yang tajam, relevan, dan memancing rasa ingin tahu agar pembaca tergerak untuk ikut berkomentar dan berbagi perspektif/pengalaman mereka di kolom komentar.
-2. Sertakan ajakan interaksi (CTA): ajak pembaca untuk Like, Komen pandangan atau pengalamannya di bawah, dan Share postingan ini ke rekan-rekan IT lainnya.
+Target length: 900-1400 characters in clear, compelling, idiomatic ENGLISH.
+
+MANDATORY ENDING SECTION BEFORE HASHTAGS:
+1. Ask ONE thought-provoking, specific discussion question that triggers engineers, tech leads, and peers to chime in with their real-world experience and perspectives in the comments.
+2. Include Call To Action (CTA): Invite readers to Like, Comment their experience or thoughts below, and Share the post with fellow IT colleagues/teams.
 End with 5-7 relevant tech hashtags.
 
 SKILL FOTOGRAFI & PROMPT THUMBNAIL FOTO (image_prompt):
@@ -172,7 +175,7 @@ Return JSON strictly matching: {"title": "...", "post_text": "...", "image_promp
   console.log('[TELEGRAM] Mengirim foto dan teks draft ke Telegram...');
   const formData = new FormData();
   formData.append('chat_id', CONFIG.TELEGRAM_CHAT_ID);
-  formData.append('caption', `📸 <b>FOTO KONTEN FB SIAP POSTING</b>\n<b>Topik:</b> ${parsed.title}`);
+  formData.append('caption', `📸 <b>READY-TO-POST FACEBOOK PHOTO CONTENT</b>\n<b>Topic:</b> ${parsed.title}`);
   formData.append('parse_mode', 'HTML');
   formData.append('photo', new Blob([imgBuffer], { type: 'image/jpeg' }), path.basename(photoFile));
 
@@ -185,7 +188,7 @@ Return JSON strictly matching: {"title": "...", "post_text": "...", "image_promp
   const timeStr = new Date().toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' });
   const msgPayload = {
     chat_id: CONFIG.TELEGRAM_CHAT_ID,
-    text: `📘 <b>DRAFT POSTINGAN FACEBOOK (SIAP SALIN)</b>\n━━━━━━━━━━━━━━━━━━━━\n📌 <b>Topik:</b> ${parsed.title}\n🕒 <b>Jadwal:</b> ${timeStr} WIB\n\n📋 <b>Ketuk blok teks di bawah untuk salin:</b>\n\n<pre><code>${escapedText}</code></pre>\n\n━━━━━━━━━━━━━━━━━━━━\n💡 <i>Simpan foto di atas ke galeri, ketuk teks untuk salin, lalu posting langsung ke feed Facebook Anda.</i>`,
+    text: `📘 <b>FACEBOOK DRAFT POST (READY TO COPY)</b>\n━━━━━━━━━━━━━━━━━━━━\n📌 <b>Topic:</b> ${parsed.title}\n🕒 <b>Slot:</b> ${timeStr} WIB\n\n📋 <b>Tap the text block below to copy:</b>\n\n<pre><code>${escapedText}</code></pre>\n\n━━━━━━━━━━━━━━━━━━━━\n💡 <i>Save the photo above to your gallery, tap the text block to copy, and paste directly to your Facebook feed.</i>`,
     parse_mode: 'HTML'
   };
 
