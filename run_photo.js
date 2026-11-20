@@ -39,6 +39,28 @@ const AI_TOPIC_ANGLES = [
   'Automated Insurance Claims Validation & Diagnostic Code Anomaly Detection Using Machine Learning'
 ];
 
+// ponytail: brace-matched scan; deepseek sometimes appends prose after the object
+function extractJson(raw) {
+  const start = raw.indexOf('{');
+  if (start === -1) return null;
+  let depth = 0, inStr = false, esc = false;
+  for (let i = start; i < raw.length; i++) {
+    const ch = raw[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (ch === '\\') esc = true;
+      else if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') inStr = true;
+    else if (ch === '{') depth++;
+    else if (ch === '}' && --depth === 0) {
+      try { return JSON.parse(raw.slice(start, i + 1)); } catch (e) { return null; }
+    }
+  }
+  return null;
+}
+
 function loadState() {
   if (fs.existsSync(CONFIG.STATE_FILE)) {
     try {
@@ -121,7 +143,7 @@ Return JSON strictly matching: {"title": "...", "post_text": "...", "image_promp
       'Authorization': `Bearer ${CONFIG.ROUTER_API_KEY}`
     },
     body: JSON.stringify({
-      model: 'ag/gemini-3.8-flash',
+      model: 'pecut/pecuti/deepseek-v4-flash',
       stream: false,
       temperature: 0.85,
       messages: [
@@ -133,9 +155,8 @@ Return JSON strictly matching: {"title": "...", "post_text": "...", "image_promp
 
   const chatData = await chatRes.json();
   const rawContent = chatData.choices?.[0]?.message?.content || '';
-  const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('Gagal parse JSON dari respons AI');
-  const parsed = JSON.parse(jsonMatch[0]);
+  const parsed = extractJson(rawContent);
+  if (!parsed) throw new Error('Gagal parse JSON dari respons AI');
 
   console.log(`[AI DRAFT READY] Topik: "${parsed.title}"`);
 
