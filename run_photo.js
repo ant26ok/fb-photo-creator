@@ -61,6 +61,56 @@ function extractJson(raw) {
   return null;
 }
 
+// Image generation: /images/generations is quota-limited (429); chat/completions
+// with an image model returns inline base64 and still works. Try both.
+async function generateImage(prompt) {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${CONFIG.ROUTER_API_KEY}`
+  };
+
+  try {
+    const res = await fetch(`${CONFIG.ROUTER_URL}/images/generations?response_format=binary`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ model: 'pecut/pecuti/gemini-3.1-flash-image', prompt })
+    });
+    if (res.ok) {
+      const buf = Buffer.from(await res.arrayBuffer());
+      if (buf.length > 10000) return buf;
+    } else {
+      console.warn(`[AI IMAGE] /images/generations HTTP ${res.status}`);
+    }
+  } catch (e) {
+    console.warn('[AI IMAGE] /images/generations error:', e.message);
+  }
+
+  try {
+    const res = await fetch(`${CONFIG.ROUTER_URL}/chat/completions`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: 'pecut/pecuti/gemini-3.1-flash-image',
+        messages: [{ role: 'user', content: `Generate an image: ${prompt}` }]
+      })
+    });
+    if (!res.ok) {
+      console.warn(`[AI IMAGE] chat/completions HTTP ${res.status}`);
+      return null;
+    }
+    const txt = await res.text();
+    const m = txt.match(/data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/=]{500,})/);
+    if (!m) {
+      console.warn('[AI IMAGE] no inline image in chat response');
+      return null;
+    }
+    return Buffer.from(m[2], 'base64');
+  } catch (e) {
+    console.warn('[AI IMAGE] chat/completions error:', e.message);
+    return null;
+  }
+}
+
 function loadState() {
   if (fs.existsSync(CONFIG.STATE_FILE)) {
     try {
@@ -161,30 +211,15 @@ Return JSON strictly matching: {"title": "...", "post_text": "...", "image_promp
   console.log(`[AI DRAFT READY] Topik: "${parsed.title}"`);
 
   // 2. Generate Image with Retry
-  console.log(`[AI IMAGE] Meminta foto dari Gemini 3.1 Flash Image...`);
+  console.log(`[AI IMAGE] Meminta foto dari image model...`);
   let imgBuffer = null;
   for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      const imgRes = await fetch(`${CONFIG.ROUTER_URL}/images/generations?response_format=binary`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${CONFIG.ROUTER_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'ag/gemini-3.1-flash-image',
-          prompt: parsed.image_prompt
-        })
-      });
-      if (imgRes.ok) {
-        imgBuffer = Buffer.from(await imgRes.arrayBuffer());
-        console.log(`[AI IMAGE SUCCESS] Foto selesai (Percobaan ${attempt}): ${imgBuffer.length} bytes`);
-        break;
-      }
-    } catch (e) {
-      console.warn(`[AI IMAGE RETRY ${attempt}] Error: ${e.message}`);
-      await new Promise(r => setTimeout(r, 3000));
+    imgBuffer = await generateImage(parsed.image_prompt);
+    if (imgBuffer) {
+      console.log(`[AI IMAGE SUCCESS] Foto selesai (Percobaan ${attempt}): ${imgBuffer.length} bytes`);
+      break;
     }
+    await new Promise(r => setTimeout(r, 3000));
   }
 
   if (!imgBuffer) throw new Error('Gagal membuat gambar AI setelah 3 percobaan');
