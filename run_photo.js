@@ -124,6 +124,10 @@ function saveState(state) {
   fs.writeFileSync(CONFIG.STATE_FILE, JSON.stringify(state, null, 2));
 }
 
+function getPhotoSlot() {
+  return process.env.FB_PHOTO_SLOT || (new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Jakarta' }) + '_' + String(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta', hour: '2-digit', hour12: false })).trim());
+}
+
 // ponytail: no quota metadata on 9Router /v1/models — chain fallbacks at runtime instead
 const CHAT_MODELS = [
   process.env.AI_CHAT_MODEL,
@@ -173,7 +177,7 @@ async function runPhotoGenerator() {
   console.log('====================================================');
 
   const state = loadState();
-  const currentSlot = process.env.FB_PHOTO_SLOT || (new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Jakarta' }) + '_' + String(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta', hour: '2-digit', hour12: false })).trim());
+  const currentSlot = getPhotoSlot();
 
   if (state.lastExecutedSlot === currentSlot) {
     console.log(`[SLOT GUARD] Slot ${currentSlot} sudah dieksekusi sebelumnya. Melewati eksekusi.`);
@@ -299,12 +303,13 @@ Return JSON strictly matching: {"title": "...", "post_text": "...", "image_promp
 }
 
 if (require.main === module) {
-  runPhotoGenerator().catch(err => {
+  if (!process.env.FB_PHOTO_SLOT) runPhotoGenerator().catch(err => {
     console.error('[FATAL ERROR]:', err);
     process.exit(1);
   });
 }
 
 module.exports = {
-  runPhotoGenerator
+  runPhotoGenerator,
+  getPhotoSlot
 };
