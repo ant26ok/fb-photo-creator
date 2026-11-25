@@ -73,7 +73,7 @@ async function generateImage(prompt) {
     const res = await fetch(`${CONFIG.ROUTER_URL}/images/generations?response_format=binary`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ model: 'pecut/pecuti/gemini-3.1-flash-image', prompt })
+      body: JSON.stringify({ model: process.env.AI_IMAGE_MODEL || 'pecut/unlimited/nemotron-3.5-super-vl', prompt })
     });
     if (res.ok) {
       const buf = Buffer.from(await res.arrayBuffer());
@@ -90,7 +90,7 @@ async function generateImage(prompt) {
       method: 'POST',
       headers,
       body: JSON.stringify({
-        model: 'pecut/pecuti/gemini-3.1-flash-image',
+        model: process.env.AI_IMAGE_MODEL || 'pecut/unlimited/nemotron-3.5-super-vl',
         messages: [{ role: 'user', content: `Generate an image: ${prompt}` }]
       })
     });
@@ -124,6 +124,34 @@ function saveState(state) {
   fs.writeFileSync(CONFIG.STATE_FILE, JSON.stringify(state, null, 2));
 }
 
+// ponytail: no quota metadata on 9Router /v1/models — chain fallbacks at runtime instead
+const CHAT_MODELS = [
+  process.env.AI_CHAT_MODEL,
+  'pecut/unlimited/deepseek-v4.1',
+  'pecut/unlimited/glm-5.3-flash',
+  'pecut/unlimited/mimo-v2.6-flash',
+  'pecut/pecuti/deepseek-v4-flash'
+].filter(Boolean);
+
+async function fetchWithModelFallback(url, options) {
+  let lastErr;
+  for (const model of CHAT_MODELS) {
+    try {
+      const res = await fetch(url, {
+        ...options,
+        body: JSON.stringify({ ...JSON.parse(options.body), model })
+      });
+      if (res.ok) return res;
+      console.warn(`[MODEL FALLBACK] ${model} -> HTTP ${res.status}`);
+      lastErr = new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      console.warn(`[MODEL FALLBACK] ${model} -> ${err.message}`);
+      lastErr = err;
+    }
+  }
+  throw lastErr;
+}
+
 async function fetchWithRetry(url, options, maxRetries = 3) {
   for (let i = 1; i <= maxRetries; i++) {
     try {
@@ -145,7 +173,7 @@ async function runPhotoGenerator() {
   console.log('====================================================');
 
   const state = loadState();
-  const currentSlot = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Jakarta' }) + '_' + String(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta', hour: '2-digit', hour12: false })).trim();
+  const currentSlot = process.env.FB_PHOTO_SLOT || (new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Jakarta' }) + '_' + String(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta', hour: '2-digit', hour12: false })).trim());
 
   if (state.lastExecutedSlot === currentSlot) {
     console.log(`[SLOT GUARD] Slot ${currentSlot} sudah dieksekusi sebelumnya. Melewati eksekusi.`);
@@ -186,7 +214,7 @@ SKILL FOTOGRAFI & PROMPT THUMBNAIL FOTO (image_prompt):
 
 Return JSON strictly matching: {"title": "...", "post_text": "...", "image_prompt": "..."}`;
 
-  const chatRes = await fetchWithRetry(`${CONFIG.ROUTER_URL}/chat/completions`, {
+  const chatRes = await fetchWithModelFallback(`${CONFIG.ROUTER_URL}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
